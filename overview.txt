@@ -1,0 +1,200 @@
+A simple way to think about it:
+
+data + logic + route + response
+
+When someone calls your API:
+
+/api/products/
+
+Django needs to know:
+
+Which URL was called? --->>> urls
+Which code should run? ---->>> views 
+Which data should be used? --->>> 
+How should the response be returned? ------>>>> That’s where models, views, urls, admin, serializers fit.
+
+
+
+1. Models ->>> database blueprint -> Models define how data is stored in the database.
+   class Product(models.Model):
+        name = models.CharField(max_length=150)
+        base_price = models.DecimalField(max_digits=10, decimal_places=2)
+
+    here, 
+    database will have a Product table 
+
+    Product -> table -->>>>>>>> stores product info
+    id	name	base_price
+    1	Shoes	2000
+
+    PricingRule ->>> table ---->>>> stores discount rules
+
+    when you run this 
+    python manage.py makemigrations
+    python manage.py migrate
+
+    django converts your code into a database table
+
+2. admin ->> internal management panel
+    Django gives a built-in admin panel.
+
+    admin.site.register(Product)  ----->>>> You’re telling Django:
+
+    “Show Product in admin UI so I can create/edit records.”
+
+    Why admin is useful
+
+    During development:
+    a. fast testing
+    b. no need to write APIs first
+    c. easy to inspect data
+
+    Think of it like an internal back office.
+
+3. urls ->>> request router (also declare endpoint for url)
+    This tells Django:
+
+    “If this URL comes in, send it to this view.”  
+
+    ex -> 
+    path("products/", ProductListCreateView.as_view())
+
+    Means: 
+    If user hits:
+    /api/products/
+    Run:
+    ProductListCreateView
+
+4. views ->> Business logic (entrypoint)
+    Views receive the request and decide what happens.
+
+    ex ->
+    class ProductListCreateView(generics.ListCreateAPIView):
+        queryset = Product.objects.all()
+        serializer_class = ProductSerializer
+    
+    That means:
+     a. get all products
+     b. use serializer
+     c.return response
+
+    Views answer:
+    “What should happen when user calls this API?”
+
+Later your pricing engine will mostly live around views + services.
+
+5. serializer ->>> Python object ↔ JSON conversion
+    Database gives Django Python objects. (data we fetch from database is in the form of objects)
+
+    But APIs usually send JSON.
+    Product(name="Shoes", base_price=2000) ---->>> python object
+
+    API Responce 
+    {
+       "name": "Shoes",
+       "base_price": "2000.00"
+    }
+
+    Serializer handles that conversion.
+
+FLOW OF OUR PROJECT
+
+Suppose frontend calls:
+
+GET /api/products/ 
+
+1. URL
+Finds matching route.
+
+↓
+
+2. View
+Runs query.
+
+↓
+
+3. Model
+Fetches products from DB.
+
+↓
+
+4. Serializer
+Converts objects to JSON.
+
+↓
+
+5. Response
+Returns API data.
+
+
+Django REST Framework? ----->>> toolkit built on top of Django to make APIs much easier.
+
+Without DRF:
+-> you’d manually build JSON responses
+-> manually validate requests
+-> manually handle lots of API plumbing
+
+With DRF:
+-> serializers
+-> generic views
+-> request parsing
+-> authentication
+-> pagination
+
+already available.
+
+Without DRF:
+You write lots of repetitive code.
+
+With DRF:
+class ProductListCreateView(generics.ListCreateAPIView):
+
+and Django handles most of the work.
+
+That’s why it’s widely used.
+
+One architecture tip -------------------------------------------------------------------------------
+
+A common beginner mistake is:
+putting all logic in views
+
+We won’t do that.
+
+For your project:
+->> views → request handling
+->> services → pricing calculations
+
+That’s closer to real-world backend code.
+
+Browser / Postman
+        ↓
+      URL
+        ↓
+      View
+        ↓
+   Serializer
+        ↓
+     Model
+        ↓
+   Database
+        ↓
+   Serializer
+        ↓
+    Response
+
+Service layer is where your real pricing engine will live.
+
+--->>> Models = data
+“What exists?”
+
+--->>> Views = request handling
+“What endpoint was called?”
+
+--->>> Services = business logic
+“How should price be calculated?”
+
+That separation makes your code easier to explain in interviews
+
+
+
+
